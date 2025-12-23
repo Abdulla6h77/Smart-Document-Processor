@@ -1,0 +1,14 @@
+# ESSENTIAL PACKAGES ONLY
+camel-ai
+paddlepaddle
+paddleocr
+fastapi
+uvicorn
+streamlit
+PyPDF2
+Pillow
+pandas
+python-dotenv
+pyyaml
+aiohttp
+loguru
