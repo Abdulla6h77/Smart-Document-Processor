@@ -32,6 +32,14 @@ class CoordinatorAgent(BaseAgent):
     
     async def setup(self, config: Dict[str, Any]):
         """Setup coordinator with full configuration"""
+        # #region agent log
+        import json
+        log_path = r"d:\erine_project\.cursor\debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "coordinator_agent.py:33", "message": "Coordinator.setup entry", "data": {"has_config": config is not None, "has_agents_config": "agents" in config if config else False}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         try:
             self.logger.info("Setting up Coordinator Agent...")
             
@@ -40,6 +48,12 @@ class CoordinatorAgent(BaseAgent):
             
             # Initialize document loader
             self.document_loader = DocumentLoader(config.get("processing", {}))
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "coordinator_agent.py:42", "message": "DocumentLoader created", "data": {"document_loader_exists": self.document_loader is not None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             
             # Initialize sub-agents with their configs
             agent_configs = config.get("agents", {})
@@ -47,6 +61,12 @@ class CoordinatorAgent(BaseAgent):
             # OCR Agent
             ocr_config = agent_configs.get("ocr", {})
             self.agents["ocr"] = OCRAgent("OCRAgent", ocr_config)
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "coordinator_agent.py:49", "message": "OCR Agent initialized", "data": {"ocr_agent_exists": "ocr" in self.agents}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             self.logger.info("OCR Agent initialized")
             
             # Analysis Agent
@@ -60,16 +80,42 @@ class CoordinatorAgent(BaseAgent):
             self.logger.info("Validation Agent initialized")
             
             self.setup_complete = True
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "coordinator_agent.py:62", "message": "Coordinator setup complete", "data": {"setup_complete": self.setup_complete, "agents_count": len(self.agents)}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             self.logger.info("Coordinator Agent setup completed successfully")
             
         except Exception as e:
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "coordinator_agent.py:65", "message": "Coordinator setup failed", "data": {"exception_type": type(e).__name__, "exception_message": str(e)}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             self.logger.error(f"Coordinator setup failed: {str(e)}")
             self.setup_complete = False
             raise
     
     async def _execute_task(self, task: Dict[str, Any], context: Optional[Dict] = None) -> Dict[str, Any]:
         """Execute coordinated document processing with advanced workflow"""
+        # #region agent log
+        import json
+        log_path = r"d:\erine_project\.cursor\debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "coordinator_agent.py:70", "message": "_execute_task entry", "data": {"setup_complete": self.setup_complete, "task_type": task.get("type"), "has_document_path": "document_path" in task}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         if not self.setup_complete:
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "coordinator_agent.py:72", "message": "Setup not complete error", "data": {"setup_complete": self.setup_complete}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             raise RuntimeError("Coordinator not properly setup. Call setup() first.")
         
         start_time = datetime.now()
@@ -84,17 +130,36 @@ class CoordinatorAgent(BaseAgent):
             if not document_path:
                 raise ValueError("document_path is required")
             
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "coordinator_agent.py:87", "message": "Task parameters extracted", "data": {"document_path": document_path, "extraction_type": extraction_type, "workflow_type": workflow_type}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
+            
             self.logger.info(f"Starting coordinated processing: {workflow_type} workflow")
             self.logger.info(f"Document: {Path(document_path).name}")
             self.logger.info(f"Extraction type: {extraction_type}")
             
             # Execute workflow based on type
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "coordinator_agent.py:92", "message": "Before workflow execution", "data": {"workflow_type": workflow_type, "agents_initialized": list(self.agents.keys()) if hasattr(self, "agents") else []}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             if workflow_type == "parallel":
                 result = await self._execute_parallel_workflow(document_path, extraction_type, analysis_type, task)
             elif workflow_type == "streaming":
                 result = await self._execute_streaming_workflow(document_path, extraction_type, analysis_type, task)
             else:
                 result = await self._execute_standard_workflow(document_path, extraction_type, analysis_type, task)
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "coordinator_agent.py:97", "message": "After workflow execution", "data": {"result_keys": list(result.keys()) if result else [], "has_extraction_results": "extraction_results" in result if result else False}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             
             # Add comprehensive metadata
             processing_time = (datetime.now() - start_time).total_seconds()
@@ -127,13 +192,33 @@ class CoordinatorAgent(BaseAgent):
     async def _execute_standard_workflow(self, document_path: str, extraction_type: str, 
                                        analysis_type: str, task: Dict[str, Any]) -> Dict[str, Any]:
         """Execute standard sequential workflow"""
+        # #region agent log
+        import json
+        log_path = r"d:\erine_project\.cursor\debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "coordinator_agent.py:127", "message": "Standard workflow started", "data": {"document_path": document_path}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         self.logger.info("Executing standard workflow")
         
         # Step 1: Load and preprocess document
         load_result = await self._load_document(document_path)
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "coordinator_agent.py:134", "message": "Document loaded", "data": {"load_success": load_result.get("load_success") if load_result else None, "image_count": load_result.get("image_count") if load_result else None, "has_processed_images": "processed_images" in load_result if load_result else False}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         
         # Step 2: OCR extraction
         ocr_result = await self._perform_ocr(load_result, extraction_type)
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "coordinator_agent.py:136", "message": "OCR completed", "data": {"ocr_success": "extracted_content" in ocr_result if ocr_result else False, "has_error": "error" in ocr_result if ocr_result else False}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         
         # Step 3: Analysis
         analysis_result = await self._perform_analysis(ocr_result, analysis_type, task)
@@ -280,22 +365,42 @@ class CoordinatorAgent(BaseAgent):
     
     async def _perform_ocr(self, load_result: Dict[str, Any], extraction_type: str) -> Dict[str, Any]:
         """Perform OCR extraction with progress tracking"""
+        # #region agent log
+        import json
+        log_path = r"d:\erine_project\.cursor\debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "coordinator_agent.py:281", "message": "_perform_ocr entry", "data": {"has_ocr_agent": "ocr" in self.agents if hasattr(self, "agents") else False, "has_processed_images": "processed_images" in load_result, "image_count": len(load_result.get("processed_images", [])) if "processed_images" in load_result else 0}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         try:
             self.logger.info(f"Starting OCR extraction: {extraction_type}")
             
             ocr_agent = self.agents["ocr"]
             processed_images = load_result["processed_images"]
             
-            # Create OCR task
+            # Create OCR task with actual images - pass images directly instead of document_path
             ocr_task = {
                 "type": "ocr_extraction",
-                "document_path": "batch_processing",
+                "image": processed_images[0] if len(processed_images) == 1 else processed_images,  # Pass single image or list
                 "extraction_type": extraction_type,
                 "preprocessing": True
             }
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "coordinator_agent.py:295", "message": "Before ocr_agent.process", "data": {"ocr_task_type": ocr_task.get("type"), "has_image": "image" in ocr_task, "has_images": len(processed_images) > 0}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             
             # Process all images
             result = await ocr_agent.process(ocr_task)
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "coordinator_agent.py:298", "message": "After ocr_agent.process", "data": {"result_success": result.get("success") if result else None, "has_error": "error" in result if result else False}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             
             # Add OCR-specific metrics
             if result["success"]:
@@ -480,11 +585,47 @@ class CoordinatorAgent(BaseAgent):
             # Add quality metrics
             final_result["quality_metrics"] = self._calculate_quality_metrics(final_result)
             
+            # Sanitize the result to ensure JSON serializability (remove any method objects)
+            final_result = self._sanitize_result(final_result)
+            
             return final_result
             
         except Exception as e:
             self.logger.error(f"Result compilation failed: {str(e)}")
             raise
+    
+    def _sanitize_result(self, obj: Any) -> Any:
+        """Recursively sanitize object to be JSON serializable by removing methods and non-serializable objects"""
+        if isinstance(obj, dict):
+            sanitized = {}
+            for k, v in obj.items():
+                # Skip private methods and callable objects
+                if not callable(v) and not k.startswith('_'):
+                    try:
+                        sanitized[k] = self._sanitize_result(v)
+                    except (TypeError, ValueError):
+                        sanitized[k] = str(v) if v is not None else None
+            return sanitized
+        elif isinstance(obj, (list, tuple)):
+            sanitized = []
+            for item in obj:
+                if not callable(item):
+                    try:
+                        sanitized.append(self._sanitize_result(item))
+                    except (TypeError, ValueError):
+                        sanitized.append(str(item) if item is not None else None)
+            return sanitized
+        elif isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        elif hasattr(obj, '__dict__'):
+            # For custom objects, try to convert to dict
+            try:
+                return self._sanitize_result(obj.__dict__)
+            except:
+                return str(obj)
+        else:
+            # For anything else (including methods), convert to string
+            return str(obj)
     
     def _calculate_quality_metrics(self, result: Dict[str, Any]) -> Dict[str, Any]:
         """Calculate comprehensive quality metrics"""

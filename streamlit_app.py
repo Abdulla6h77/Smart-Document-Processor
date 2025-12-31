@@ -82,19 +82,59 @@ st.markdown("""
 @st.cache_resource
 def get_coordinator():
     """Get or create coordinator instance"""
+    # #region agent log
+    import json
+    import os
+    log_path = r"d:\erine_project\.cursor\debug.log"
+    try:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:83", "message": "get_coordinator entry", "data": {}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+    except: pass
+    # #endregion
     try:
         config = load_config()
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:87", "message": "Config loaded", "data": {"has_config": config is not None, "has_agents": "agents" in config if config else False}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         coordinator = CoordinatorAgent("DocumentCoordinator", config["agents"]["coordinator"])
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:89", "message": "CoordinatorAgent created", "data": {"coordinator_type": type(coordinator).__name__}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         
         # Create event loop for async operations
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
         # Setup coordinator
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:94", "message": "Before coordinator.setup", "data": {}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         loop.run_until_complete(coordinator.setup(config))
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:94", "message": "After coordinator.setup", "data": {"setup_complete": coordinator.setup_complete}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         
         return coordinator, loop
     except Exception as e:
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:98", "message": "get_coordinator exception", "data": {"exception_type": type(e).__name__, "exception_message": str(e)}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         st.error(f"Failed to initialize coordinator: {str(e)}")
         return None, None
 
@@ -109,7 +149,24 @@ def init_session_state():
 
 def main():
     """Main Streamlit app"""
+    # #region agent log
+    import json
+    import os
+    log_path = r"d:\erine_project\.cursor\debug.log"
+    try:
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:110", "message": "main() entry", "data": {}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+    except Exception as e:
+        pass
+    # #endregion
     init_session_state()
+    # #region agent log
+    try:
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:112", "message": "After init_session_state", "data": {"coordinator_in_state": "coordinator" in st.session_state, "coordinator_exists": st.session_state.get("coordinator") is not None, "coordinator_setup": getattr(st.session_state.get("coordinator"), "setup_complete", None) if st.session_state.get("coordinator") else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+    except: pass
+    # #endregion
     
     # Header
     st.title("🤖 Smart Document Processor")
@@ -152,12 +209,24 @@ def main():
             type=['pdf', 'jpg', 'jpeg', 'png', 'tiff', 'bmp', 'docx'],
             help="Upload a document to process"
         )
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:155", "message": "File uploader state", "data": {"uploaded_file_exists": uploaded_file is not None, "file_name": uploaded_file.name if uploaded_file else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         
         if uploaded_file is not None:
             st.success(f"✅ File uploaded: {uploaded_file.name}")
             st.info(f"📊 Size: {uploaded_file.size / 1024:.1f} KB")
         
         process_button = st.button("🚀 Process Document", disabled=uploaded_file is None)
+        # #region agent log
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:160", "message": "Process button state", "data": {"process_button": process_button, "uploaded_file": uploaded_file is not None, "coordinator": st.session_state.get("coordinator") is not None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
     
     with col2:
         st.header("📊 System Status")
@@ -184,6 +253,14 @@ def main():
     
     # Processing
     if process_button and uploaded_file and st.session_state.coordinator:
+        # #region agent log
+        import json
+        log_path = r"d:\erine_project\.cursor\debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "streamlit_app.py:186", "message": "Process button clicked", "data": {"coordinator_exists": st.session_state.coordinator is not None, "coordinator_setup": getattr(st.session_state.coordinator, "setup_complete", None) if st.session_state.coordinator else None, "file_name": uploaded_file.name, "file_size": uploaded_file.size}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         with st.spinner("🔄 Processing document... This may take a moment."):
             try:
                 # Save uploaded file temporarily
@@ -204,10 +281,28 @@ def main():
                     "workflow_type": workflow_type,
                     "original_filename": uploaded_file.name
                 }
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "streamlit_app.py:207", "message": "Task created", "data": {"task_type": task.get("type"), "document_path": task.get("document_path"), "extraction_type": task.get("extraction_type"), "workflow_type": task.get("workflow_type")}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+                except: pass
+                # #endregion
                 
                 # Process document
                 loop = st.session_state.event_loop
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "streamlit_app.py:210", "message": "Before coordinator.process", "data": {"loop_exists": loop is not None, "coordinator_type": type(st.session_state.coordinator).__name__ if st.session_state.coordinator else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+                except: pass
+                # #endregion
                 result = loop.run_until_complete(st.session_state.coordinator.process(task))
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "streamlit_app.py:210", "message": "After coordinator.process", "data": {"result_success": result.get("success") if result else None, "result_keys": list(result.keys()) if result else [], "error": result.get("error") if result else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+                except: pass
+                # #endregion
                 
                 # Clean up temp file
                 try:
@@ -222,6 +317,12 @@ def main():
                     st.error(f"❌ Processing failed: {result.get('error', {}).get('message', 'Unknown error')}")
                     
             except Exception as e:
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "streamlit_app.py:225", "message": "Exception caught", "data": {"exception_type": type(e).__name__, "exception_message": str(e), "exception_args": str(e.args) if hasattr(e, "args") else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+                except: pass
+                # #endregion
                 st.error(f"❌ Error during processing: {str(e)}")
     
     # Results display

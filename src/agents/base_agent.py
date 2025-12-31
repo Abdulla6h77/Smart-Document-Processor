@@ -1,5 +1,5 @@
 # src/agents/base_agent.py - Complete file with CAMEL-AI fix
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 import asyncio
 import json
 import uuid
@@ -61,27 +61,43 @@ class BaseAgent(ABC):
         if USING_CAMEL:
             try:
                 # CAMEL initialization - use their actual API
+                # ChatAgent only accepts system_message and model_config, not 'name'
                 self.base_agent = BaseAgentClass(
                     system_message=f"You are {name}, a specialized AI agent",
                     model_config=model_config
                 )
             except Exception as e:
-                logger.warning(f"CAMEL initialization failed: {e}, using fallback")
-                self.base_agent = BaseAgentClass(
-                    name=name,
-                    system_message=f"You are {name}, a specialized AI agent",
-                    model_config=model_config
-                )
+                logger.warning(f"CAMEL initialization failed: {e}, using fallback object")
+                # Create a simple fallback object instead of trying ChatAgent again
+                class FallbackAgent:
+                    def __init__(self, name, system_message, model_config):
+                        self.name = name
+                        self.system_message = system_message
+                        self.model_config = model_config
+                        self.memory = []
+                        self.status = "idle"
+                self.base_agent = FallbackAgent(name, f"You are {name}, a specialized AI agent", model_config)
         else:
-            # Fallback initialization
-            self.base_agent = BaseAgentClass(
-                name=name,
-                system_message=f"You are {name}, a specialized AI agent",
-                model_config=model_config
-            )
+            # Fallback initialization - create a simple object
+            class FallbackAgent:
+                def __init__(self, name, system_message, model_config):
+                    self.name = name
+                    self.system_message = system_message
+                    self.model_config = model_config
+                    self.memory = []
+                    self.status = "idle"
+            self.base_agent = FallbackAgent(name, f"You are {name}, a specialized AI agent", model_config)
     
     async def process(self, task: Dict[str, Any], context: Optional[Dict] = None) -> Dict[str, Any]:
         """Main processing method with full error handling"""
+        # #region agent log
+        import json
+        log_path = r"d:\erine_project\.cursor\debug.log"
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base_agent.py:83", "message": "BaseAgent.process entry", "data": {"agent_name": self.name, "task_type": task.get("type") if task else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         task_id = str(uuid.uuid4())
         start_time = datetime.now()
         
@@ -92,10 +108,28 @@ class BaseAgent(ABC):
             
             # Validate task
             if not self._validate_task(task):
+                # #region agent log
+                try:
+                    with open(log_path, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "base_agent.py:94", "message": "Task validation failed", "data": {"agent_name": self.name, "task": task}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+                except: pass
+                # #endregion
                 raise ValueError(f"Invalid task format for {self.name}")
             
             # Execute task
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base_agent.py:98", "message": "Before _execute_task", "data": {"agent_name": self.name}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             result = await self._execute_task(task, context)
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base_agent.py:98", "message": "After _execute_task", "data": {"agent_name": self.name, "result_type": type(result).__name__ if result else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             
             # Validate result
             if not self._validate_result(result):
@@ -114,6 +148,12 @@ class BaseAgent(ABC):
             return self._format_result(result, task_id, start_time, datetime.now())
             
         except Exception as e:
+            # #region agent log
+            try:
+                with open(log_path, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "base_agent.py:116", "message": "Exception in BaseAgent.process", "data": {"agent_name": self.name, "exception_type": type(e).__name__, "exception_message": str(e), "exception_traceback": str(e.__traceback__) if hasattr(e, "__traceback__") else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             self.status = "error"
             self.error_count += 1
             self._update_success_rate()
@@ -160,8 +200,29 @@ class BaseAgent(ABC):
         if len(self.memory) > 1000:
             self.memory = self.memory[-1000:]
     
+    def _sanitize_for_json(self, obj: Any) -> Any:
+        """Recursively sanitize object to be JSON serializable"""
+        if isinstance(obj, dict):
+            return {k: self._sanitize_for_json(v) for k, v in obj.items() if not callable(v) and not k.startswith('_')}
+        elif isinstance(obj, (list, tuple)):
+            return [self._sanitize_for_json(item) for item in obj if not callable(item)]
+        elif isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        elif hasattr(obj, '__dict__'):
+            # For custom objects, try to convert to dict
+            try:
+                return self._sanitize_for_json(obj.__dict__)
+            except:
+                return str(obj)
+        else:
+            # For anything else, convert to string
+            return str(obj)
+    
     def _format_result(self, result: Dict[str, Any], task_id: str, start_time: datetime, end_time: datetime) -> Dict[str, Any]:
         """Format result with standardized metadata"""
+        # Sanitize result to ensure JSON serializability
+        sanitized_result = self._sanitize_for_json(result)
+        
         return {
             "success": True,
             "task_id": task_id,
@@ -173,9 +234,9 @@ class BaseAgent(ABC):
                 "duration": (end_time - start_time).total_seconds()
             },
             "status": self.status,
-            "result": result,
+            "result": sanitized_result,
             "metrics": {
-                "confidence": result.get("confidence", 0.8),
+                "confidence": sanitized_result.get("confidence", 0.8) if isinstance(sanitized_result, dict) else 0.8,
                 "processing_time": (end_time - start_time).total_seconds()
             }
         }

@@ -30,25 +30,73 @@ class PaddleOCRModel:
         if PaddleOCR is None:
             raise RuntimeError("PaddleOCR library not available")
         
-        try:
-            # Initialize with multilingual support
-            lang_param = 'multilingual' if len(self.languages) > 1 else self.languages[0]
-            
-            self.model = PaddleOCR(
-                use_angle_cls=True,
-                lang=lang_param,
-                use_gpu=self.use_gpu,
-                show_log=False,
-                det_model_dir=None,  # Use default
-                rec_model_dir=None,  # Use default
-                cls_model_dir=None   # Use default
-            )
-            
-            logger.info(f"PaddleOCR model initialized with languages: {self.languages}")
-            
-        except Exception as e:
-            logger.error(f"Failed to initialize PaddleOCR: {str(e)}")
-            raise
+        # Try multiple initialization strategies
+        initialization_strategies = []
+        
+        # Strategy 1: Try with first language (most reliable)
+        if self.languages:
+            initialization_strategies.append({
+                "lang": self.languages[0],
+                "ocr_version": "PP-OCRv4",
+                "description": f"Single language: {self.languages[0]}"
+            })
+        
+        # Strategy 2: Try multilingual if multiple languages
+        if len(self.languages) > 1:
+            initialization_strategies.append({
+                "lang": "ch",  # Chinese often works as multilingual fallback
+                "ocr_version": "PP-OCRv4",
+                "description": "Chinese as multilingual fallback"
+            })
+        
+        # Strategy 3: Try English as fallback
+        if self.languages[0] != "en":
+            initialization_strategies.append({
+                "lang": "en",
+                "ocr_version": "PP-OCRv4",
+                "description": "English fallback"
+            })
+        
+        # Try each strategy until one works
+        last_error = None
+        for strategy in initialization_strategies:
+            try:
+                logger.info(f"Trying PaddleOCR initialization: {strategy['description']}")
+                
+                # Build initialization parameters - check which parameters are actually supported
+                import inspect
+                sig = inspect.signature(PaddleOCR.__init__)
+                supported_params = set(sig.parameters.keys())
+                
+                init_params = {
+                    "lang": strategy["lang"],
+                }
+                
+                # Only add parameters that are actually supported by this PaddleOCR version
+                if "use_angle_cls" in supported_params:
+                    init_params["use_angle_cls"] = True
+                if "use_gpu" in supported_params:
+                    init_params["use_gpu"] = self.use_gpu
+                if "show_log" in supported_params:
+                    init_params["show_log"] = False
+                if "ocr_version" in supported_params:
+                    init_params["ocr_version"] = strategy["ocr_version"]
+                
+                self.model = PaddleOCR(**init_params)
+                
+                logger.info(f"PaddleOCR model initialized successfully with: {strategy['description']}")
+                logger.info(f"Configured languages: {self.languages}, using: {strategy['lang']}")
+                return  # Success!
+                
+            except Exception as e:
+                last_error = e
+                logger.warning(f"PaddleOCR initialization failed with {strategy['description']}: {str(e)}")
+                continue
+        
+        # If all strategies failed, raise the last error
+        error_msg = f"Failed to initialize PaddleOCR with any strategy. Last error: {str(last_error)}"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
     
     async def extract_text(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """Extract text from image with full details"""
