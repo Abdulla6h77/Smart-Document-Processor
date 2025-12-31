@@ -20,7 +20,7 @@ model: "paddleocr-vl-0.9b"    # ocr (also fake)
 The real model is configured in `.env`:
 ```env
 ERNIE_MODEL_NAME=baidu/ernie-4.5-21b-a3b  # ✅ REAL MODEL via OpenRouter
-OPENROUTER_API_KEY=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
+OPENROUTER_API_KEY=your key 
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 ```
 
