@@ -143,7 +143,15 @@ class PaddleOCRModel:
     
     def _run_ocr(self, image: np.ndarray) -> Any:
         """Run OCR synchronously (for executor)"""
-        return self.model.ocr(image, cls=True)
+        try:
+            return self.model.ocr(image, cls=True)
+        except TypeError:
+            # Fallback for versions where cls argument is not supported or causes issues
+            logger.warning("PaddleOCR.ocr() failed with cls=True, retrying without it")
+            return self.model.ocr(image, cls=False)
+        except Exception:
+            # Generic fallback
+            return self.model.ocr(image)
     
     async def extract_tables(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """Extract table structures from document"""

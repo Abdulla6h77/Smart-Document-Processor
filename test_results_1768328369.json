@@ -1,0 +1,21 @@
+{
+  "success": false,
+  "task_id": "dad2547e-9809-4588-9ab1-29dd1370faf9",
+  "agent_name": "DocumentCoordinator",
+  "agent_id": "6014aee4-75c7-4d14-bd64-e838b7e7ce9f",
+  "timestamp": {
+    "start": "2026-01-13T23:19:26.469333",
+    "end": "2026-01-13T23:19:29.381088",
+    "duration": 2.911755
+  },
+  "status": "error",
+  "error": {
+    "message": "Object of type method is not JSON serializable",
+    "type": "processing_error"
+  },
+  "result": null,
+  "metrics": {
+    "confidence": 0.0,
+    "processing_time": 2.911755
+  }
+}

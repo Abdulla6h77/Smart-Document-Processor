@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from loguru import logger
 import json
+from datetime import datetime
 
 def setup_logger(log_level: str = "INFO", log_file: str = "logs/app.log"):
     """Setup logging configuration"""
@@ -70,7 +71,7 @@ def log_agent_activity(agent_name: str, activity: str, details: dict = None):
         "agent": agent_name,
         "activity": activity,
         "details": details or {},
-        "timestamp": logger.catch
+        "timestamp": datetime.now().isoformat()
     }
     logger.info(f"AGENT_ACTIVITY: {json.dumps(log_data)}")
 
@@ -82,7 +83,7 @@ def log_processing_metrics(document_type: str, processing_time: float, success: 
         "processing_time": processing_time,
         "success": success,
         "error": error,
-        "timestamp": logger.catch
+        "timestamp": datetime.now().isoformat()
     }
     logger.info(f"PROCESSING_METRICS: {json.dumps(metrics)}")
 
@@ -94,6 +95,6 @@ def log_api_call(endpoint: str, method: str, status_code: int, response_time: fl
         "method": method,
         "status_code": status_code,
         "response_time": response_time,
-        "timestamp": logger.catch
+        "timestamp": datetime.now().isoformat()
     }
     logger.info(f"API_CALL: {json.dumps(api_metrics)}")

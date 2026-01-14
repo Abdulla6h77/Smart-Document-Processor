@@ -81,6 +81,50 @@ class OCRAgent(BaseAgent):
         
         return result
     
+    async def _extract_text_direct(self, document_path: str, extraction_type: str) -> Dict[str, Any]:
+        """Extract text directly from text-based files without OCR"""
+        global docx
+        path_obj = Path(document_path)
+        start_time = time.time()
+        
+        content = ""
+        try:
+            if path_obj.suffix.lower() in ['.txt', '.md', '.json', '.csv']:
+                with open(document_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+            elif path_obj.suffix.lower() == '.docx':
+                if docx is None:
+                     # Try lazy import again
+                    try:
+                        import docx as docx_lib
+                        docx = docx_lib
+                    except ImportError:
+                        raise ImportError("python-docx not installed. Install with: pip install python-docx")
+                
+                doc = docx.Document(document_path)
+                content = "\n".join([para.text for para in doc.paragraphs])
+            
+            processing_time = time.time() - start_time
+            
+            return {
+                "extracted_content": content,
+                "extracted_tables": [], 
+                "document_info": {
+                    "filename": path_obj.name,
+                    "extension": path_obj.suffix.lower(),
+                    "size_bytes": path_obj.stat().st_size
+                },
+                "extraction_type": extraction_type,
+                "confidence": 1.0, # 100% confidence for direct extraction
+                "processing_time": processing_time,
+                "pages_processed": 1,
+                "extracted_items": [{"text": line, "confidence": 1.0} for line in content.split('\n') if line.strip()]
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Direct text extraction failed: {str(e)}")
+            raise
+
     async def _load_and_preprocess_document(self, document_path: str, preprocess: bool) -> tuple[List[np.ndarray], Dict[str, Any]]:
         """Load document and preprocess images"""
         try:
@@ -308,9 +352,22 @@ class OCRAgent(BaseAgent):
             
             all_tables.extend(tables)
             total_processing_time += processing_time
+            
+        # Construct text content from tables for analysis
+        table_texts = []
+        for table in all_tables:
+            if "rows" in table:
+                for row in table["rows"]:
+                    row_text = " | ".join([item["text"] for item in row])
+                    table_texts.append(row_text)
+            table_texts.append("") # Empty line between tables
+            
+        extracted_text = "\n".join(table_texts).strip()
+        if not extracted_text:
+            extracted_text = f"Found {len(all_tables)} tables across {len(images)} pages, but no text content could be extracted."
         
         return {
-            "extracted_content": f"Found {len(all_tables)} tables across {len(images)} pages",
+            "extracted_content": extracted_text,
             "extracted_tables": all_tables,
             "total_tables": len(all_tables),
             "processing_time": total_processing_time,
@@ -338,9 +395,16 @@ class OCRAgent(BaseAgent):
             
             all_structure.extend(structure_elements)
             total_processing_time += processing_time
+            
+        # Construct text content from structure
+        structure_texts = [item["text"] for item in all_structure if "text" in item]
+        extracted_text = "\n".join(structure_texts).strip()
+        
+        if not extracted_text:
+             extracted_text = f"Extracted structure from {len(images)} pages, but no text content could be extracted."
         
         return {
-            "extracted_content": f"Extracted structure from {len(images)} pages",
+            "extracted_content": extracted_text,
             "structure_elements": all_structure,
             "total_elements": len(all_structure),
             "processing_time": total_processing_time,

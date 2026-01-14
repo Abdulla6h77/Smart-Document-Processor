@@ -90,14 +90,6 @@ class BaseAgent(ABC):
     
     async def process(self, task: Dict[str, Any], context: Optional[Dict] = None) -> Dict[str, Any]:
         """Main processing method with full error handling"""
-        # #region agent log
-        import json
-        log_path = r"d:\erine_project\.cursor\debug.log"
-        try:
-            with open(log_path, "a", encoding="utf-8") as f:
-                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base_agent.py:83", "message": "BaseAgent.process entry", "data": {"agent_name": self.name, "task_type": task.get("type") if task else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
-        except: pass
-        # #endregion
         task_id = str(uuid.uuid4())
         start_time = datetime.now()
         
@@ -108,28 +100,10 @@ class BaseAgent(ABC):
             
             # Validate task
             if not self._validate_task(task):
-                # #region agent log
-                try:
-                    with open(log_path, "a", encoding="utf-8") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "base_agent.py:94", "message": "Task validation failed", "data": {"agent_name": self.name, "task": task}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
-                except: pass
-                # #endregion
                 raise ValueError(f"Invalid task format for {self.name}")
             
             # Execute task
-            # #region agent log
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base_agent.py:98", "message": "Before _execute_task", "data": {"agent_name": self.name}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
-            except: pass
-            # #endregion
             result = await self._execute_task(task, context)
-            # #region agent log
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "base_agent.py:98", "message": "After _execute_task", "data": {"agent_name": self.name, "result_type": type(result).__name__ if result else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
-            except: pass
-            # #endregion
             
             # Validate result
             if not self._validate_result(result):
@@ -148,12 +122,6 @@ class BaseAgent(ABC):
             return self._format_result(result, task_id, start_time, datetime.now())
             
         except Exception as e:
-            # #region agent log
-            try:
-                with open(log_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "base_agent.py:116", "message": "Exception in BaseAgent.process", "data": {"agent_name": self.name, "exception_type": type(e).__name__, "exception_message": str(e), "exception_traceback": str(e.__traceback__) if hasattr(e, "__traceback__") else None}, "timestamp": int(__import__("time").time() * 1000)}) + "\n")
-            except: pass
-            # #endregion
             self.status = "error"
             self.error_count += 1
             self._update_success_rate()
@@ -202,10 +170,13 @@ class BaseAgent(ABC):
     
     def _sanitize_for_json(self, obj: Any) -> Any:
         """Recursively sanitize object to be JSON serializable"""
+        if callable(obj):
+            return str(obj)
+            
         if isinstance(obj, dict):
-            return {k: self._sanitize_for_json(v) for k, v in obj.items() if not callable(v) and not k.startswith('_')}
+            return {k: self._sanitize_for_json(v) for k, v in obj.items() if not k.startswith('_')}
         elif isinstance(obj, (list, tuple)):
-            return [self._sanitize_for_json(item) for item in obj if not callable(item)]
+            return [self._sanitize_for_json(item) for item in obj]
         elif isinstance(obj, (str, int, float, bool, type(None))):
             return obj
         elif hasattr(obj, '__dict__'):
